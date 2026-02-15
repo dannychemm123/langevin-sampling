@@ -72,8 +72,8 @@ def plot_scaled_trajectories_1d(x0: torch.Tensor, simulator: Simulator, timestep
             ax.plot(timesteps.cpu() * time_scale, trajectory.cpu(), label=label)
 
 # Let's try rescaling with time
-sigmas = [1.0, 2.0, 10.0]
-ds = [0.25, 1.0, 4.0] # sigma**2 / 2t
+sigmas = [1.0, 2.0, 3.0]
+ds = [0.25, 1.0,1.5] # sigma**2 / 2t
 simulation_time = 10.0
 
 fig, axes = plt.subplots(len(ds), len(sigmas), figsize=(8 * len(sigmas), 8 * len(ds)))
@@ -88,7 +88,7 @@ for d_idx, d in enumerate(ds):
         ts = torch.linspace(0.0,simulation_time / time_scale,1000).to(device) # simulation timesteps
         ax = axes[d_idx, s_idx]
         plot_scaled_trajectories_1d(x0=x0, simulator=simulator, timesteps=ts, time_scale=time_scale, label=f'Sigma = {sigma}', ax=ax)
-        ax.set_title(f'OU with Sigma={sigma}, Theta={theta}, D={d}')
-        ax.set_xlabel(f't / (sigma^2)')
-        ax.set_ylabel('X_t')
+        ax.set_title(rf'OU with $\sigma={sigma}$, $\theta={theta}$, D={d}')
+        ax.set_xlabel(r't / $\sigma^2$')
+        ax.set_ylabel(r'$X_t$')
 plt.show()

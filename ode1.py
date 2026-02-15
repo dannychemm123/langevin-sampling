@@ -101,12 +101,19 @@ class EulerMaruyamaSimulator(Simulator):
         self.sde = sde
 
     def step(self,xt:torch.Tensor, t:torch.Tensor,h:torch.Tensor):
-        # drift = self.sde.drift_coefficent(xt,t)
-        # diffusion = self.sde.diffusion_coefficent(xt,t)
-        # batch_size, dim = xt.shape
-        # noise = torch.randn(batch_size, dim, device=xt.device)
-        # xt_next = xt + drift * h + torch.matmul(diffusion, noise.unsqueeze(-1)).squeeze(-1) * math.sqrt(h)
-        return xt + self.sde.drift_coefficent(xt,t) * h + self.sde.diffusion_coefficent(xt,t) * torch.sqrt(h) * torch.randn_like(xt)
+        drift = self.sde.drift_coefficent(xt, t)
+        diffusion = self.sde.diffusion_coefficent(xt, t)
+        batch_size = xt.shape[0]
+        dim = xt.shape[-1]
+        noise = torch.randn(batch_size, dim, device=xt.device)
+        if diffusion is None:
+            diffusion_noise = noise
+        elif diffusion.dim() == 3:
+            diffusion_noise = torch.matmul(diffusion, noise.unsqueeze(-1)).squeeze(-1)
+        else:
+            diffusion_noise = diffusion * noise
+        xt_next = xt + drift * h + diffusion_noise * math.sqrt(h)
+        return xt_next
         
     
 class BrownianMotion(SDE):
@@ -129,7 +136,9 @@ class BrownianMotion(SDE):
             t: Tensor of shape (batch_size, 1) or (1,)
         returns:
             diffusion_coeff: Tensor of shape (batch_size, dim, dim)"""
-        batch_size, dim = xt.shape
+        # Accept xt with shape (batch_size, dim) or (batch_size, ..., dim)
+        batch_size = xt.shape[0]
+        dim = xt.shape[-1]
         return self.sigma * torch.eye(dim, device=xt.device).unsqueeze(0).expand(batch_size, -1, -1)
     
 def plot_trajectories_1d(x0: torch.Tensor, simulator: Simulator, timesteps: torch.Tensor, ax: Optional[Axes] = None):
